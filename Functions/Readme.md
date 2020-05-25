@@ -1,5 +1,5 @@
 # Functions
 
-## Shots on Goal & Outcome
+## Shots on Goal & Outcome for Statsbomb
 
-![](EYz2QDcX0AA9XvP.png)
+![](shotsongoal.png)
