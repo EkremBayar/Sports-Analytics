@@ -9,6 +9,17 @@ output: html_document
 *Github:* https://github.com/Slothfulwave612/Friends-of-Tracking-Explained/tree/master/Extras/01.%20Analyzing%20Shots
 
 
+```{r}
+user = "erhan"
+
+
+if(user == "erhan")
+  {path = "D:\\Akademik Çalýþmalar\\Spor Bilimi\\Futbol\\Statsbomb\\data\\"}
+if(user == "ekrem")
+  {path = "C:\\Users\\dell\\Desktop\\FoT\\open-data-master\\data\\"}
+
+```
+
 # 2. Packages
 ```{r message=FALSE, warning=FALSE}
 library(tidyverse)
@@ -28,7 +39,7 @@ source(file = "Functions/Shots on goal & Outcomes for Statsbomb.R")
 # 4. FIFA World Cup 2018 France Argentina
 
 ```{r}
-fr_ar <- fromJSON(file="C:\\Users\\dell\\Desktop\\FoT\\open-data-master\\data\\events\\7580.json")
+fr_ar <- fromJSON(file=paste0(path,"events\\7580.json"))
 
 # Shot Index
 shot.index <- which(sapply(fr_ar,function(x) x$type$name)=="Shot")

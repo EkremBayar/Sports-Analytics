@@ -1,0 +1,94 @@
+---
+title: "7. Statsbomb Shots & Post"
+author: "Ekrem Bayar"
+date: "25 05 2020"
+output: html_document
+---
+
+# 1. Python Version
+*Github:* https://github.com/Slothfulwave612/Friends-of-Tracking-Explained/tree/master/Extras/01.%20Analyzing%20Shots
+
+
+```{r}
+user = "erhan"
+
+
+if(user == "erhan")
+  {path = "D:\\Akademik �al��malar\\Spor Bilimi\\Futbol\\Statsbomb\\data\\"}
+if(user == "ekrem")
+  {path = "C:\\Users\\dell\\Desktop\\FoT\\open-data-master\\data\\"}
+
+```
+
+# 2. Packages
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(magrittr)
+library(parallel)
+library(rjson)
+library(gridExtra)
+```
+
+
+# 3. Post 
+```{r}
+source(file = "Functions/Shots on goal & Outcomes for Statsbomb.R")
+```
+
+
+# 4. FIFA World Cup 2018 France Argentina
+
+```{r}
+fr_ar <- fromJSON(file=paste0(path,"events\\7580.json"))
+
+# Shot Index
+shot.index <- which(sapply(fr_ar,function(x) x$type$name)=="Shot")
+
+# Json Formatını Direk Data Frame'e Dönüştürme
+shots <- lapply(fr_ar[shot.index], function(x){ unlist(x)})
+
+library(plyr)
+shots <- rbind.fill(lapply(shots, 
+    function(x) do.call("data.frame", as.list(x))
+))
+
+
+shots <- shots %>% 
+  filter(type.name == "Shot") %>% 
+  select(-contains("freeze")) %>% 
+  mutate_if(is.factor, as.character) %>% 
+  mutate_at(vars(c(location1, location2, shot.end_location1, shot.end_location2, 
+                   shot.end_location3, shot.statsbomb_xg)), funs(as.numeric))
+
+shots <- shots %>% filter(shot.outcome.name %in% c('Goal','Post', 'Off T', 'Saved', 
+                                                   'Saved to Post','Saved Off Target')) %>% 
+  mutate(goal.seq = 1:length(shot.outcome.name))
+
+```
+
+
+
+# 5. Visualization
+
+- Green Background:      "seagreen"
+- Dark BackGround:       "#202020"
+- Dark Blue Background:  "#224C56"
+- Light Blue Background: "steelblue"
+
+```{r}
+post(fill_background = "seagreen")+
+  geom_point(shots, mapping = aes(x = shot.end_location2, y = shot.end_location3, 
+                                  color = shot.outcome.name, shape = shot.type.name), size = 5)+
+  geom_text(shots, mapping = aes(x = shot.end_location2, y = shot.end_location3, label = goal.seq),
+            size = 3, color = "darkslategray")+
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(hjust=0.5, vjust = -5, size = 15),
+    plot.subtitle =  element_text(hjust=0.5, vjust = -5),
+    text = element_text(color = "white")
+    )+
+  labs(color = "Shot Outcome", title = "FIFA World Cup 18", shape = NULL,
+       subtitle = "France - Argentina Shots")+
+  scale_color_manual(values = c("yellow", "red", "blue", "white", "black", "orange"))+
+  scale_shape_manual(values = c(15, 16, 17))
+```
