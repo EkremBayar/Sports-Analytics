@@ -16,13 +16,25 @@ library(DT)
 ```
 
 
+```{r}
+user = "erhan"
+
+
+if(user == "erhan")
+  {path = "D:\\Akademik Çalýþmalar\\Spor Bilimi\\Futbol\\Statsbomb\\data\\"}
+if(user == "ekrem")
+  {path = "C:\\Users\\dell\\Desktop\\FoT\\open-data-master\\data\\"}
+
+```
+
+
 # All Events 
 
 ```{r message=FALSE, warning=FALSE}
 # ID for England vs Sweden Womens World Cup
 # match id = 69301
 
-df <- fromJSON(file="C:\\Users\\dell\\Desktop\\FoT\\open-data-master\\data\\events\\69301.json")
+df <- fromJSON(file=paste0(path,"events\\69301.json"))
 
 # From Json to Data Frame
 df <- lapply(df, function(x){ unlist(x)})
@@ -48,7 +60,7 @@ head(df)
 #ID for England vs Sweden Womens World Cup
 # match id = 69301
 
-df <- fromJSON(file="C:\\Users\\dell\\Desktop\\FoT\\open-data-master\\data\\events\\69301.json")
+df <- fromJSON(file=paste0(path,"events\\69301.json"))
 
 # Shot Index
 shot.index <- which(sapply(df,function(x) x$type$name)=="Shot")
