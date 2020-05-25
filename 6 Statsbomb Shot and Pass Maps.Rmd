@@ -1,0 +1,373 @@
+---
+title: "6. Statsbomb Shot & Pass Maps"
+author: "Ekrem Bayar"
+date: "25 05 2020"
+output: html_document
+---
+
+# 1. Friends of Tracking: Making Your Own Shot and Pass Maps
+
+*Video:* https://www.youtube.com/watch?v=oOAnERLiN5U
+
+*Github:* https://github.com/Friends-of-Tracking-Data-FoTD/SoccermaticsForPython/blob/master/2PlotShotsAndPasses.py
+
+
+# 2. Packages
+```{r message=FALSE, warning=FALSE}
+library(plyr)
+library(tidyverse)
+library(magrittr)
+library(parallel)
+library(rjson)
+```
+
+# 3. Pitch 
+```{r}
+source(file = "Functions/Pitch for Statsbomb.R")
+```
+
+
+# 3. Shots: Women's World Cup 19: England vs Sweden
+
+```{r}
+#ID for England vs Sweden Womens World Cup
+# match id = 69301
+
+df <- fromJSON(file="C:\\Users\\dell\\Desktop\\FoT\\open-data-master\\data\\events\\69301.json")
+
+# Shot Index
+shot.index <- which(sapply(df,function(x) x$type$name)=="Shot")
+shot.index
+
+
+# Json Formatını Direk Data Frame'e Dönüştürme
+shots <- mclapply(df[shot.index], function(x){ unlist(x)})
+
+library(plyr)
+shots <- rbind.fill(mclapply(shots, 
+    function(x) do.call("data.frame", as.list(x))
+))
+
+
+
+shots %<>% select(-contains("freeze")) %>% 
+  mutate_if(is.factor, as.character) %>% 
+  mutate_at(vars(c(location1, location2, shot.statsbomb_xg)), funs(as.numeric))
+```
+
+
+
+## Visualization
+
+```{r}
+home_team ="England Women's"
+away_team ="Sweden Women's"
+
+sut <- shots %>%  
+  mutate(location2 = if_else(team.name == home_team,  80 - location2, location2),
+         location1 = if_else(team.name == away_team, 120 - location1, location1)) 
+
+
+# Shots
+pitch()+
+  geom_point(sut %>% filter(shot.outcome.name == "Goal"), 
+             mapping = aes(location1, location2, color = team.name), size = 5)+
+  geom_point(sut %>% filter(shot.outcome.name != "Goal"),
+             mapping = aes(location1, location2, color = team.name), size = 5, alpha = 0.4)+
+  scale_color_manual(values = c("red", "blue"))+
+  geom_text(sut %>% filter(shot.outcome.name == "Goal"), 
+            mapping = aes(location1, location2, label = player.name),vjust = -0.5, hjust = -0.01)+
+  labs(title = "England Women's Shots  |  Sweden Women's Shots", color = NULL)+
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(hjust=0.5, vjust = -5)
+    )
+
+
+
+
+##### XG'ün neden karesini alıyor orayı tam anlamadım eğitimde
+
+# Expected Goal
+pitch()+
+  geom_point(sut %>% filter(shot.outcome.name == "Goal"), 
+             mapping = aes(location1, location2, color = team.name,
+                           size = sqrt(shot.statsbomb_xg*15)))+
+  geom_point(sut %>% filter(shot.outcome.name != "Goal"), 
+             mapping = aes(location1, location2, color = team.name,  
+                           size = sqrt(shot.statsbomb_xg*15)),  alpha = 0.4)+
+  scale_color_manual(values = c("red", "blue"))+
+  geom_text(sut %>% filter(shot.outcome.name == "Goal"), 
+            mapping = aes(location1, location2, label = player.name),
+            vjust = -0.5, hjust = -0.01)+
+  labs(title = "England Women's Shots  |  Sweden Women's Shots", color = NULL, size = "XG")+
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(hjust=0.5, vjust = -5)
+    )
+
+```
+
+
+# 4. Passes: Women's World Cup 19: England vs Sweden
+
+> NOT: Sara Caroline Seger'in pası yanlış çıkıyor bende videoda farklı!
+
+
+## 4.1. Create a dataframe of passes which contains all the passes in the match
+
+```{r}
+# Pass Index
+pass.index <- which(sapply(df,function(x) x$type$name)=="Pass")
+pass.index %>% head
+
+
+# Json Formatını Direk Data Frame'e Dönüştürme
+pass <- mclapply(df[pass.index], function(x){ unlist(x)})
+
+library(plyr)
+pass <- rbind.fill(mclapply(pass, 
+    function(x) do.call("data.frame", as.list(x))
+))
+
+head(pass)
+```
+
+
+## 4.2 Plot the start point of every Sweden pass. Attacking left to right.
+
+
+```{r}
+sweden <- pass %>% 
+  filter(team.name == "Sweden Women's") %>% 
+  mutate_if(is.factor, as.character) %>% 
+  mutate_at(vars(c(location1, location2)), funs(as.numeric)) 
+  
+
+pitch()+
+  geom_point(sweden, mapping = aes(120-location1, location2))+
+  labs(title = "Sweden Women's All Pass Locations")
+```
+
+
+
+## 4.3. Plot only passes made by Caroline Seger (she is Sara Caroline Seger in the database)
+
+pitchLengthX=120
+pitchWidthY=80
+
+```{r}
+sara.caroline.seger <- pass %>% 
+  filter(player.name == "Sara Caroline Seger") %>% 
+  mutate_if(is.factor, as.character) %>% 
+  mutate_at(vars(c(location1, location2, pass.end_location1, pass.end_location2)), funs(as.numeric)) %>% 
+  mutate(dx = pass.end_location1 - location1, 
+         dy = pass.end_location2 - location2)
+
+pitch()+
+  geom_point(sara.caroline.seger, mapping = aes(location1, 80-location2))+
+  labs(title = "Sara Caroline Seger's All Pass Locations",
+       subtitle = paste("S. Caroline Seger:", unique(sara.caroline.seger$position.name)))
+
+
+
+pitch()+
+  geom_point(sara.caroline.seger, mapping = aes(location1, 80-location2), size = 4, color = "blue")+
+  geom_point(sara.caroline.seger, mapping = aes(location1, 80-location2, label = index), size = 4)+
+  geom_segment(sara.caroline.seger, mapping = aes(x = location1, y = 80-location2,
+                                                  xend = pass.end_location1, yend = 80-pass.end_location2),
+               color = "yellow", arrow = arrow(length = unit(0.01, "npc")))
+
+
+```
+
+
+
+#4, Plot arrows to show where the passes we
+
+```{r}
+pitch()+
+  geom_point(sara.caroline.seger, mapping = aes(location1, location2), color = "blue")+
+  geom_segment(sara.caroline.seger, mapping = aes(x = location1, xend = pass.end_location1, y = location2, yend = pass.end_location2),
+               arrow = arrow(length = unit(0.03, "npc")), color = "yellow")+
+  labs(title = "Sara Caroline Seger's All Pass Locations",
+       subtitle = paste("S. Caroline Seger:", unique(sara.caroline.seger$position.name)))
+```
+
+
+```{r}
+pitch()+
+  geom_point(sara.caroline.seger, mapping = aes(location1, 80-location2), color = "blue")+
+  geom_segment(sara.caroline.seger, 
+               mapping = aes(x = location1, xend = pass.end_location1-location1, 
+                             y = location2, yend = pass.end_location2-location2))
+```
+
+
+
+
+
+
+
+# Homework: France - Argentina
+
+
+```{r}
+#ID for England vs Sweden Womens World Cup
+# match id = 7551
+
+fr_ar <- fromJSON(file="C:\\Users\\dell\\Desktop\\FoT\\open-data-master\\data\\events\\7580.json")
+
+sapply(fr_ar,function(x) x$player$name) %>% unlist() %>% unique()
+
+
+# Shot Index
+player.index <- which(sapply(fr_ar,function(x) x$player$name)=="Lionel Andrés Messi Cuccittini")
+
+# Json Formatını Direk Data Frame'e Dönüştürme
+messi <- lapply(fr_ar[player.index], function(x){ unlist(x)})
+library(plyr)
+messi <- rbind.fill(lapply(messi, 
+    function(x) do.call("data.frame", as.list(x))
+))
+
+
+messi %<>% 
+  mutate_if(is.factor, as.character) %>% 
+  mutate_at(vars(c(location1, location2, pass.end_location1, pass.end_location2)), funs(as.numeric)) 
+
+
+messi %>% dplyr::count(type.name) %>% arrange(-n)
+```
+
+
+
+```{r}
+messi %>% filter(type.name == "Pass") %>% select(contains("pass"))
+```
+
+
+```{r}
+pitch(pitch_theme = "blue")+
+  geom_point(messi %>% filter(type.name == "Pass"), mapping = aes(location1, location2, color = pass.height.name, shape = play_pattern.name), size = 5)+
+  geom_segment(messi, mapping = aes(x = location1, y = location2, xend = pass.end_location1, yend = pass.end_location2), 
+               arrow = arrow(length = unit(0.03, "npc")))+
+  scale_color_manual(values = c("green","yellow","red"))
+
+
+# Coordflip eklendiğinde doğru oluyor gibi
+pitch(pitch_theme = "blue")+
+  geom_point(messi %>% filter(type.name == "Pass"), mapping = aes(location1, location2, color = pass.height.name, shape = play_pattern.name), size = 5)+
+  geom_segment(messi, mapping = aes(x = location1, y = location2, xend = pass.end_location1, yend = pass.end_location2), 
+               arrow = arrow(length = unit(0.03, "npc")))+
+  scale_color_manual(values = c("green","yellow","red"))+
+  coord_flip()
+
+# Aşağıdaki de doğru dikeyde coordfilip
+
+pitch(pitch_theme = "blue")+
+  geom_point(messi %>% filter(type.name == "Pass"), mapping = aes(location1, 80-location2, color = pass.height.name, shape = play_pattern.name), size = 5)+
+  geom_segment(messi, mapping = aes(x = location1, y = 80-location2, xend = pass.end_location1, yend = 80-pass.end_location2, color = pass.height.name), 
+               arrow = arrow(length = unit(0.03, "npc")))+
+  scale_color_manual(values = c("green","yellow","red"))+
+  scale_shape_manual(values = c(17, 15,3,4,20))+
+  labs(title = "Messi's Pass Map", subtitle = "FIFA World Cup 18: France-Argentina", shape = "Play Pattern", color = "Height")+
+  theme(text = element_text(color = "white"),
+        plot.title = element_text(hjust=0.5, vjust = -5),
+        plot.subtitle = element_text(hjust=0.5, vjust = -5))
+
+
+
+
+
+
+
+pitch(pitch_theme = "blue")+
+  geom_point(messi %>% filter(type.name == "Pass"), mapping = aes(location1, location2, color = pass.height.name, shape = play_pattern.name), size = 5)+
+  geom_segment(messi, mapping = aes(x = location1, y = location2, xend = pass.end_location1, yend = pass.end_location2,color = pass.height.name), 
+               arrow = arrow(length = unit(0.03, "npc")))+
+  scale_color_manual(values = c("green","yellow","red"))+
+  scale_x_reverse()
+```
+
+
+```{r}
+# Shot Index
+shot.index <- which(sapply(fr_ar,function(x) x$type$name)=="Shot")
+shot.index
+
+
+# Json Formatını Direk Data Frame'e Dönüştürme
+shots <- lapply(fr_ar[shot.index], function(x){ unlist(x)})
+
+library(plyr)
+shots <- rbind.fill(lapply(shots, 
+    function(x) do.call("data.frame", as.list(x))
+))
+```
+
+```{r}
+home_team ="France"
+away_team ="Argentina"
+
+shots <- shots %>% 
+  filter(type.name == "Shot") %>% 
+  select(-contains("freeze")) %>% 
+  mutate_if(is.factor, as.character) %>% 
+  mutate_at(vars(c(location1, location2, shot.statsbomb_xg)), funs(as.numeric))
+
+sut <- shots %>%  
+  mutate(location2 = if_else(team.name == home_team,  80 - location2, location2),
+         location1 = if_else(team.name == away_team, 120 - location1, location1)) 
+
+
+##### XG'ün neden karesini alıyor orayı tam anlamadım eğitimde
+
+# Expected Goal
+pitch()+
+  geom_point(sut %>% filter(shot.outcome.name == "Goal"), mapping = aes(location1, location2, color = team.name, size = sqrt(shot.statsbomb_xg*15)))+
+  geom_point(sut %>% filter(shot.outcome.name != "Goal"), mapping = aes(location1, location2, color = team.name,  size = sqrt(shot.statsbomb_xg*15)),  alpha = 0.4)+
+  scale_color_manual(values = c("red", "blue"))+
+  geom_text(sut %>% filter(shot.outcome.name == "Goal"), mapping = aes(location1, location2, label = player.name),vjust = -0.5, hjust = -0.01)+
+  theme(legend.position = "bottom",plot.title = element_text(hjust=0.5, vjust = -5))
+
+```
+
+
+```{r}
+pitch(pitch_theme = "green")+
+  geom_point(sut %>% filter(shot.outcome.name == "Goal"), mapping = aes(location1, location2, color = team.name, size = sqrt(shot.statsbomb_xg*15)), shape = 21, fill = "red" )+
+  geom_point(sut %>% filter(player.name != "Lionel Andrés Messi Cuccittini",shot.outcome.name != "Goal"), mapping = aes(location1, location2, color = team.name,  size = sqrt(shot.statsbomb_xg*15)),  alpha = 0.4)+
+  scale_color_manual(values = c("white", "navy"))+
+  geom_point(sut %>% filter(player.name == "Lionel Andrés Messi Cuccittini"), 
+             mapping = aes(location1, location2, size = sqrt(shot.statsbomb_xg*15)))+
+  geom_text(sut %>% filter(player.name == "Lionel Andrés Messi Cuccittini"), mapping = aes(location1+1, location2-2, label = "L. Messi"),
+            size = 2)
+```
+
+```{r}
+# Pitch
+pitch(pitch_theme = "green")+
+# Messi's Shots
+  geom_point(sut %>% filter(player.name == "Lionel Andrés Messi Cuccittini"), 
+             mapping = aes(location1, location2, size = sqrt(shot.statsbomb_xg*15)), show.legend = FALSE)+
+  geom_text(sut %>% filter(player.name == "Lionel Andrés Messi Cuccittini"), mapping = aes(location1+3, location2-2, label = "L. Messi"),
+            size = 5)+
+# If outcome result is goal
+  geom_point(sut %>% filter(shot.outcome.name == "Goal"), mapping = aes(location1, location2, size = sqrt(shot.statsbomb_xg*15)), shape = 21, fill = "red" , show.legend = FALSE)+
+# Except Messi's Shots & Goals  
+  geom_point(sut %>% filter(player.name != "Lionel Andrés Messi Cuccittini",shot.outcome.name != "Goal"), mapping = aes(location1, location2, color = team.name,  size = sqrt(shot.statsbomb_xg*15)),  alpha = 0.4, show.legend = FALSE)+
+  scale_color_manual(values = c("white", "navy"))+
+# Title
+  theme(legend.position = "bottom", text = element_text(color = "white"),plot.title = element_text(hjust=0.5, vjust = -5),
+        plot.subtitle = element_text(hjust=0.5, vjust = -5))+
+  labs(title = "Argentina | France",
+       subtitle = "FIFA World Cup 18")
+```
+
+
+
+
+
+
+
