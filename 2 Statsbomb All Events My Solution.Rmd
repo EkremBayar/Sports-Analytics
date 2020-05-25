@@ -17,8 +17,17 @@ library(DT)
 # Fransa HÄ±rvatistan
 # final <- fromJSON(file="C:\\Users\\dell\\Desktop\\FoT\\open-data-master\\data\\events/8658.json")
 
+user = "erhan"
+
+
+if(user == "erhan")
+  {path = "D:\\Akademik Çalýþmalar\\Spor Bilimi\\Futbol\\Statsbomb\\data\\"}
+if(user == "ekrem")
+  {path = "C:\\Users\\dell\\Desktop\\FoT\\open-data-master\\data\\"}
+
+
 # Barcelona Deportivo 
-final <- fromJSON(file = "C:\\Users\\dell\\Desktop\\FoT\\open-data-master\\data\\events/15946.json")
+final <- fromJSON(file = paste0(path,"events/15946.json"))
 ```
 
 # All Events
