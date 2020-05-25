@@ -27,7 +27,19 @@ competitions.json files includes tournament details.
 - USA Women's League 2018 (NWSL)
 
 ```{r}
-competitions <- fromJSON(file="C:\\Users\\dell\\Desktop\\FoT\\open-data-master\\data\\competitions.json")
+user = "erhan"
+
+
+if(user == "erhan")
+  {path = "D:\\Akademik Çalýþmalar\\Spor Bilimi\\Futbol\\Statsbomb\\data\\"}
+if(user == "ekrem")
+  {path = "C:\\Users\\dell\\Desktop\\FoT\\open-data-master\\data\\"}
+
+
+# competitions <- fromJSON(file="C:\\Users\\dell\\Desktop\\FoT\\open-data-master\\data\\competitions.json")
+
+competitions <- fromJSON(file=paste0(path,"competitions.json"))
+
 
 competitions <- bind_rows(competitions)
 
@@ -39,7 +51,7 @@ datatable(competitions)
 matches file gives us match details with json format.
 
 ```{r}
-match.files <- list.files(path="C:\\Users\\dell\\Desktop\\FoT\\open-data-master\\data\\matches",
+match.files <- list.files(path=paste0(path,"matches"),
                           full.names = TRUE,recursive = TRUE)
 match.files
 ```
@@ -139,7 +151,7 @@ all.matches %>%
 Lineups gives player details, starting eleven and bench in each team.
 
 ```{r}
-lineups <- list.files(path="C:\\Users\\dell\\Desktop\\FoT\\open-data-master\\data\\lineups",
+lineups <- list.files(path=paste0(path,"lineups"),
                           full.names = TRUE,recursive = TRUE)
 head(lineups)
 ```
@@ -200,7 +212,7 @@ datatable(lineups[1:100,])
 Event Data gives ball actions in the match.
 
 ```{r}
-event.files <- list.files(path="C:\\Users\\dell\\Desktop\\FoT\\open-data-master\\data\\events",
+event.files <- list.files(path=paste0(path,"events"),
                           full.names = TRUE,recursive = TRUE)
 head(event.files)
 ```
