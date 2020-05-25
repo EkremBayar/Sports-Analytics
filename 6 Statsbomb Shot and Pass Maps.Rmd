@@ -12,6 +12,18 @@ output: html_document
 *Github:* https://github.com/Friends-of-Tracking-Data-FoTD/SoccermaticsForPython/blob/master/2PlotShotsAndPasses.py
 
 
+```{r}
+user = "erhan"
+
+
+if(user == "erhan")
+  {path = "D:\\Akademik Çalýþmalar\\Spor Bilimi\\Futbol\\Statsbomb\\data\\"}
+if(user == "ekrem")
+  {path = "C:\\Users\\dell\\Desktop\\FoT\\open-data-master\\data\\"}
+
+```
+
+
 # 2. Packages
 ```{r message=FALSE, warning=FALSE}
 library(plyr)
@@ -33,7 +45,7 @@ source(file = "Functions/Pitch for Statsbomb.R")
 #ID for England vs Sweden Womens World Cup
 # match id = 69301
 
-df <- fromJSON(file="C:\\Users\\dell\\Desktop\\FoT\\open-data-master\\data\\events\\69301.json")
+df <- fromJSON(file=paste0(path,"\\events\\69301.json"))
 
 # Shot Index
 shot.index <- which(sapply(df,function(x) x$type$name)=="Shot")
@@ -204,11 +216,6 @@ pitch()+
 ```
 
 
-
-
-
-
-
 # Homework: France - Argentina
 
 
@@ -216,7 +223,7 @@ pitch()+
 #ID for England vs Sweden Womens World Cup
 # match id = 7551
 
-fr_ar <- fromJSON(file="C:\\Users\\dell\\Desktop\\FoT\\open-data-master\\data\\events\\7580.json")
+fr_ar <- fromJSON(file=paste0(path,"events\\7580.json"))
 
 sapply(fr_ar,function(x) x$player$name) %>% unlist() %>% unique()
 
