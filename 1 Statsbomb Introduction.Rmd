@@ -1,0 +1,300 @@
+---
+title: "1. Statsbomb Data"
+author: "Ekrem Bayar"
+date: "25 05 2020"
+output: html_document
+---
+
+# 1. Packages
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(rjson)
+library(parallel)
+library(DT)
+```
+
+# 2. Data
+
+# 2.1. Competitions
+
+competitions.json files includes tournament details.
+
+- La Liga 2004-2019 Seasons
+- England FA Women's Super League 2018-2020 Seasons
+- Women's World Cup 2019
+- FIFA World Cup 2018
+- USA Women's League 2018 (NWSL)
+
+```{r}
+competitions <- fromJSON(file="C:\\Users\\dell\\Desktop\\FoT\\open-data-master\\data\\competitions.json")
+
+competitions <- bind_rows(competitions)
+
+datatable(competitions)
+```
+
+## 2.2. Matches
+
+matches file gives us match details with json format.
+
+```{r}
+match.files <- list.files(path="C:\\Users\\dell\\Desktop\\FoT\\open-data-master\\data\\matches",
+                          full.names = TRUE,recursive = TRUE)
+match.files
+```
+
+```{r}
+all.matches <- lapply(match.files, function(x){
+  
+  match.temp <- fromJSON(file=x)
+  
+  matches.df <- lapply(match.temp, function(y){
+    
+    data.frame(t(unlist(y)), stringsAsFactors = FALSE)
+    
+  })
+  
+  bind_rows(matches.df)
+  
+}) %>% bind_rows()
+
+rm(match.files)
+
+datatable(all.matches)
+```
+
+### 2.2.1. Number of Matches in each league by season   
+```{r}
+all.matches %>% 
+  group_by(competition.competition_name, season.season_name, home_team.home_team_gender) %>% 
+  count() %>% 
+  datatable()
+```
+
+- There are 64 matches in the FIFA World Cup.
+- FA Women's Super League	2018/2019 includes 107 matches but In the season had played 110 matches.
+- FA Women's Super League	2019/2020, Wikipedia shows us 82 matches but there are 87 matches here.
+- Women's World Cup	2019 is also usable. It has 52 matches. 
+
+### 2.2.2. Number of Matches in each team by season 
+```{r}
+numofmatches <- rbind(
+  all.matches %>% select(competition.competition_name, season.season_name, 
+                         home_team.home_team_name, home_team.home_team_gender) %>% 
+    rename(competition = competition.competition_name, gender = home_team.home_team_gender,
+           team = home_team.home_team_name, season = season.season_name),
+  
+  all.matches %>% select(competition.competition_name, season.season_name, 
+                         away_team.away_team_name, home_team.home_team_gender) %>% 
+    rename(competition = competition.competition_name, gender = home_team.home_team_gender,
+           team = away_team.away_team_name, season = season.season_name)
+) %>% group_by(competition, season, team, gender) %>% 
+  count()
+
+datatable(numofmatches)
+```
+
+
+There are 107 matches in the FA Women's Super League 2018/2019 but it had to be 110 matches. There are no 3 matches details in first six observation.
+
+
+```{r}
+numofmatches %>% 
+  filter(competition == "FA Women's Super League", season == "2018/2019") %>% 
+  arrange(n) %>% 
+  datatable()
+```
+
+In La Liga, Barcelona has some missings.
+```{r}
+numofmatches %>% 
+  filter(team == "Barcelona") %>% 
+  datatable()
+```
+
+```{r}
+numofmatches %>% 
+  filter(competition == "La Liga") %>% arrange(-n) %>% 
+  datatable()
+```
+
+```{r}
+numofmatches %>% 
+  filter(competition == "FIFA World Cup") %>% arrange(-n) %>% 
+  datatable()
+```
+
+```{r}
+all.matches %>% 
+  group_by(competition.competition_name, season.season_name, 
+           away_team.away_team_name, home_team.home_team_gender) %>% 
+  count() %>% 
+  datatable()
+```
+
+
+# 2.3. Lineups
+
+Lineups gives player details, starting eleven and bench in each team.
+
+```{r}
+lineups <- list.files(path="C:\\Users\\dell\\Desktop\\FoT\\open-data-master\\data\\lineups",
+                          full.names = TRUE,recursive = TRUE)
+head(lineups)
+```
+
+```{r}
+lineups <- lapply(lineups, function(x){
+  # Match Id
+  match_id <- data.frame(match_id = as.numeric(str_extract_all(x, "\\(?[0-9]+\\)?")[[1]]))
+  # Read Json
+  temp <- fromJSON(file=x)
+  
+  
+  team <- lapply(temp, function(y){
+    
+    lineups_list <- y$lineup
+      
+    # Match Id & Name
+    team_details <- data.frame(
+      team_id = y$team_id,
+      team_name = y$team_name,
+      stringsAsFactors = FALSE
+      )
+    
+    lineups_list <- lapply(lineups_list, function(z){
+      
+      if(is.null(z$player_nickname)){nickname <- NA_character_}else{nickname <- z$player_nickname}
+      if(is.null(z$jersey_number)){jersey_number <- NA_integer_}else{jersey_number <- z$jersey_number}
+      if(is.null(z$country$id)){country_id <- NA_integer_}else{country_id <- z$country$id}
+      if(is.null(z$country$name)){country_name <- NA_character_}else{country_name <- z$country$name}
+      
+      data.frame(
+        player_id = z$player_id,
+        player_name = z$player_name,
+        player_nickname = nickname,
+        jersey_number = jersey_number,
+        country_id = country_id,
+        country_name = country_name,
+        stringsAsFactors = FALSE
+      )
+      
+    }) %>% bind_rows()
+    
+    cbind(team_details, lineups_list)
+    
+  }) %>% bind_rows()
+  
+  cbind(match_id, team)
+  
+}) %>% bind_rows() %>% mutate(player_nickname = if_else(is.na(player_nickname), player_name, player_nickname))
+
+datatable(lineups[1:100,])
+```
+
+
+
+# 2.4. Maç Özeti: Events 
+
+Event Data gives ball actions in the match.
+
+```{r}
+event.files <- list.files(path="C:\\Users\\dell\\Desktop\\FoT\\open-data-master\\data\\events",
+                          full.names = TRUE,recursive = TRUE)
+head(event.files)
+```
+
+### 2.4.1. FA Women's Super League Matches
+
+FA Women's Super League has more suitable data
+
+```{r}
+wmi <- all.matches %>% 
+  filter(competition.competition_name == "FA Women's Super League",	season.season_name == "2018/2019") %>% 
+  pull(match_id)
+
+head(wmi)
+
+wmi_index <- data.frame(
+  index = 1:length(event.files),
+  event.files = event.files,
+  stringsAsFactors = FALSE
+) %>% filter(unlist(str_extract_all(event.files, "\\(?[0-9]+\\)?")) %in% wmi) %>% 
+  pull(index)
+
+head(event.files[wmi_index])
+```
+
+
+
+```{r}
+events <- mclapply(event.files[wmi_index], function(x){
+  
+  match_id <- data.frame(match_id = as.numeric(str_extract_all(x, "\\(?[0-9]+\\)?")[[1]]))
+  
+  temp <- fromJSON(file=x)
+  
+  event <- mclapply(temp, function(y){
+    
+    data.frame(
+      id = y$id,
+      index = y$index,
+      event = y$type$name,
+      play.pattern = y$play_pattern$name,
+      period = y$period,
+      timestamp = y$timestamp,
+      minute = y$minute,
+      second = y$second,
+      possession = y$possession,
+      possession.team = y$possession_team$name,
+      team = y$team$name,
+      stringsAsFactors = FALSE
+    )
+  }) %>% bind_rows()
+  
+  cbind(match_id, event)
+
+}) %>% bind_rows()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
