@@ -21,11 +21,23 @@ library(DT)
 library(DataExplorer)
 ```
 
+```{r}
+user = "erhan"
+
+
+if(user == "erhan")
+  {path = "D:\\Akademik Çalýþmalar\\Spor Bilimi\\Futbol\\Statsbomb\\data\\"}
+if(user == "ekrem")
+  {path = "C:\\Users\\dell\\Desktop\\FoT\\open-data-master\\data\\"}
+
+```
+
+
 
 # 3. FA Women's Super League
 
 ```{r}
-competitions <- fromJSON(file="C:\\Users\\dell\\Desktop\\FoT\\open-data-master\\data\\competitions.json")
+competitions <- fromJSON(file=paste0(path,"competitions.json"))
 
 competitions <- bind_rows(competitions)
 
@@ -43,7 +55,7 @@ FA Women's Super League Competition Id: 37
 
 ## Solution 1
 ```{r}
-match.files <- list.files(path="C:\\Users\\dell\\Desktop\\FoT\\open-data-master\\data\\matches",
+match.files <- list.files(path=paste0(path,"matches"),
                           full.names = TRUE,recursive = TRUE)
 
 match.files
@@ -116,8 +128,7 @@ wsl.1819 %>% head
 
 ```{r}
 wdl <- wsl.1819 %>%
-  select(home_team.home_team_name, away_team.away_team_name, 
-         home_score, away_score) %>%
+  select(home_team.home_team_name, away_team.away_team_name, home_score, away_score) %>%
   mutate(match = row_number()) %>% 
   gather(HomeAway, Team, - home_score, -away_score, - match)
 
@@ -169,7 +180,7 @@ wdl %>%
 ## 6.3. Squad Rotation with Event Data
 
 ```{r}
-event.files <- list.files(path="C:\\Users\\dell\\Desktop\\FoT\\open-data-master\\data\\events",
+event.files <- list.files(path=paste0(path,"\\events"),
                           full.names = TRUE,recursive = TRUE)
 
 wsl.1819.index <- which(unlist(str_extract_all(event.files, "\\(?[0-9]+\\)?")) %in% wsl.1819$match_id)
@@ -196,9 +207,7 @@ starting <- mclapply(event.files[wsl.1819.index], function(x){
   
 
   cbind(match_id, temp)
-  
-  
-  
+
 }) %>% bind_rows() %>% 
   rename("player.id" = X1, "player.name" = X2, "position.id" = X3, "position.name" = X4, "jersey.name" = X5) %>% 
   select(match_id, team, player.name)
@@ -273,45 +282,3 @@ wdl %>%
   scale_fill_manual(values = c("yellow", "red", "seagreen"))+
   facet_wrap(Team~.)
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
