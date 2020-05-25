@@ -1,0 +1,72 @@
+---
+title: "3. Statsbomb All Events Simple Solution"
+author: "Ekrem Bayar"
+date: "25 05 2020"
+output: html_document
+---
+
+# 1. Packages
+```{r message=FALSE, warning=FALSE}
+library(plyr)
+library(tidyverse)
+library(magrittr)
+library(parallel)
+library(rjson)
+library(DT)
+```
+
+
+# All Events 
+
+```{r message=FALSE, warning=FALSE}
+# ID for England vs Sweden Womens World Cup
+# match id = 69301
+
+df <- fromJSON(file="C:\\Users\\dell\\Desktop\\FoT\\open-data-master\\data\\events\\69301.json")
+
+# From Json to Data Frame
+df <- lapply(df, function(x){ unlist(x)})
+
+library(plyr)
+df <- rbind.fill(lapply(df, 
+    function(x) do.call("data.frame", as.list(x))
+))
+```
+
+```{r}
+dim(df)
+```
+
+```{r}
+head(df)
+```
+
+
+# Specific Event
+
+```{r}
+#ID for England vs Sweden Womens World Cup
+# match id = 69301
+
+df <- fromJSON(file="C:\\Users\\dell\\Desktop\\FoT\\open-data-master\\data\\events\\69301.json")
+
+# Shot Index
+shot.index <- which(sapply(df,function(x) x$type$name)=="Shot")
+shot.index
+
+
+# Json Formatını Direk Data Frame'e Dönüştürme
+shots <- lapply(df[shot.index], function(x){ unlist(x)})
+
+library(plyr)
+shots <- rbind.fill(lapply(shots, 
+    function(x) do.call("data.frame", as.list(x))
+))
+
+dim(shots)
+
+shots
+```
+
+
+
