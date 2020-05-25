@@ -1,0 +1,228 @@
+---
+title: "2. Statsbomb All Events: My Solution"
+author: "Ekrem Bayar"
+date: "25 05 2020"
+output: html_document
+---
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(parallel)
+library(rjson)
+library(DT)
+```
+
+
+```{r}
+# Fransa Hırvatistan
+# final <- fromJSON(file="C:\\Users\\dell\\Desktop\\FoT\\open-data-master\\data\\events/8658.json")
+
+# Barcelona Deportivo 
+final <- fromJSON(file = "C:\\Users\\dell\\Desktop\\FoT\\open-data-master\\data\\events/15946.json")
+```
+
+# All Events
+
+```{r}
+event <- mclapply(final, function(y){
+  
+  # --------------------------------------------
+  
+  # Related Events
+  if(is.null(y$related_events)){related_events <- NA_character_}else{
+    related_events <- y$related_events
+    if(length(related_events)>1)
+      related_events <- paste(related_events,collapse = " , ")
+  }
+  
+  # Tactics
+  if(is.null(y$tactics$formation)){formation <- NA_character_}else{formation <- y$tactics$formation}
+  
+  # Event Type
+  if(is.null(y[[tolower(y$type$name)]]$type$name)){event.type <- NA_character_}else{event.type <- y[[tolower(y$type$name)]]$type$name}
+  
+  # Body Part: Clearance, Goal Keeper, Pass, Shot
+  if(is.null(y[[tolower(y$type$name)]]$body_part$name)){body.part <- NA_character_}else{body.part <- y[[tolower(y$type$name)]]$body_part$name}
+  
+  # Player & Position
+  if(is.null(y$player$name)){player <- NA_character_}else{player <- y$player$name}
+  if(is.null(y$position$name)){player.position <- NA_character_}else{player.position <- y$position$name}
+  
+  # Location & End Location: Carry, Pass, Shot
+  if(is.null(y$location)){location <- NA_real_}else{location <- y$location}
+  if(is.null(y[[tolower(y$type$name)]]$end_location)){end_location <- NA_real_}else{end_location <- y[[tolower(y$type$name)]]$end_location}
+  
+  # Duration
+  if(is.null(y$duration)){duration <- NA_real_}else{duration <- y$duration}
+  
+  # Under Pressure
+  if(is.null(y$under_pressure)){under.pressure <- NA}else{under.pressure <- y$under_pressure}
+  
+  # Out
+  if(is.null(y$out)){out <- NA}else{out <- y$out}
+  
+  # Off Camera
+  if(is.null(y$off_camera)){off.camera <- NA}else{off.camera <- y$off_camera}
+  
+  # Outcome: 50-50, Ball Receipt, Dribble, Duel, Goal Keeper, Interception, Pass, Shot, Substitution
+  if(is.null(y[[str_replace(str_replace(tolower(y$type$name)," ","_"),"-","_")]]$outcome$name)){outcome <- NA_character_}else{outcome <- y[[str_replace(tolower(y$type$name)," ","_")]]$outcome$name}
+  
+  # Counterpress: 50-50, Block, Dribbled Past, Duel, Foul Committed, Pressure
+  if(is.null(y[[str_replace(str_replace(tolower(y$type$name)," ","_"),"-","_")]]$counterpress)){counterpress <- NA}else{counterpress <- y[[str_replace(tolower(y$type$name)," ","_")]]$counterpress}
+  
+  # Foul Committed & Bad Behaviour: Card 
+  if(is.null(y[[str_replace(tolower(y$type$name)," ","_")]]$card$name)){card <- NA_character_}else{card <- y[[str_replace(tolower(y$type$name)," ","_")]]$card$name}
+  
+  # Offensive: Ball Recovery, Block, Foul Committed, 
+  if(is.null(y[[str_replace(tolower(y$type$name)," ","_")]]$offensive)){offensive <- NA}else{offensive <- y[[str_replace(tolower(y$type$name)," ","_")]]$offensive}
+  
+  # Recovery Failure
+  if(is.null(y[[str_replace(tolower(y$type$name)," ","_")]]$recovery_failure)){recovery.failure <- NA}else{recovery.failure <- y[[str_replace(tolower(y$type$name)," ","_")]]$recovery_failure}
+  
+  # Deflection: Block
+  if(is.null(y[[str_replace(tolower(y$type$name)," ","_")]]$deflection)){deflection <- NA}else{deflection <- y[[str_replace(tolower(y$type$name)," ","_")]]$deflection}
+  
+  # Save Block
+  if(is.null(y[[str_replace(tolower(y$type$name)," ","_")]]$save_block)){save.block <- NA}else{save.block <- y[[str_replace(tolower(y$type$name)," ","_")]]$save_block}
+  
+  # Aerial Won: Clearance, Miscontrol, Shot
+  if(is.null(y[[str_replace(tolower(y$type$name)," ","_")]]$aerial_won)){aerial.won <- NA}else{aerial.won <- y[[str_replace(tolower(y$type$name)," ","_")]]$aerial_won}
+  
+  # Overrun
+  if(is.null(y$dribble$overrun)){overrun <- NA}else{overrun <- y$dribble$overrun}
+  
+  # Nutmeg
+  if(is.null(y$dribble$nutmeg)){nutmeg <- NA}else{nutmeg <- y$dribble$nutmeg}
+
+  # No Touch
+  if(is.null(y[[str_replace(tolower(y$type$name)," ","_")]]$no_touch)){no.touch <- NA}else{no.touch <- y[[str_replace(tolower(y$type$name)," ","_")]]$no_touch}
+  
+  # Advantage: Foul Committed, Foul Won
+  if(is.null(y[[str_replace(tolower(y$type$name)," ","_")]]$advantage)){advantage <- NA}else{advantage <- y[[str_replace(tolower(y$type$name)," ","_")]]$advantage}
+  
+  # Penalty: Foul Committed, Foul Won
+  if(is.null(y[[str_replace(tolower(y$type$name)," ","_")]]$penalty)){penalty <- NA}else{penalty <- y[[str_replace(tolower(y$type$name)," ","_")]]$penalty}
+  
+  # Goal Keeper Position
+  if(is.null(y$goalkeeper$position$name)){gk.position <- NA_character_}else{gk.position <- y$goalkeeper$position$name}
+  
+  # Goal Keeper Type
+  if(is.null(y$goalkeeper$type$name)){gk.type <- NA_character_}else{gk.type <- y$goalkeeper$type$name}
+  
+  # Technique: Goal Keeper, Pass, Shot
+  if(is.null(y[[str_replace(tolower(y$type$name)," ","_")]]$technique$name)){technique <- NA_character_}else{technique <- y[[str_replace(tolower(y$type$name)," ","_")]]$technique$name}
+  
+  # Half End Match Suspended
+  if(is.null(y$half_end$match_suspended)){half.end.match.suspended <- NA}else{half.end.match.suspended <- y$half_end$match_suspended}
+  
+  # Injury Stoppage: In Chain
+  if(is.null(y$injury_stoppage$in_chain)){injury.stoppage.in.chain <- NA}else{injury.stoppage.in.chain <- y$injury_stoppage$in_chain}
+  
+  # Pass
+  if(is.null(y$pass$recipient$name)){pass.recipient <- NA_character_}else{pass.recipient <- y$pass$recipient$name}
+  if(is.null(y$pass$length)){pass.length <- NA_real_}else{pass.length <- y$pass$length}
+  if(is.null(y$pass$angle)){pass.angle <- NA_real_}else{pass.angle <- y$pass$angle}
+  if(is.null(y$pass$height$name)){pass.height <- NA_character_}else{pass.height <- y$pass$height$name}
+  if(is.null(y$pass$assisted_shot_id)){assisted.shot.id <- NA_character_}else{assisted.shot.id <- y$pass$assisted_shot_id}
+  if(is.null(y$pass$backheel)){backheel <- NA}else{backheel <- y$pass$backheel}
+  if(is.null(y$pass$miscommunication)){miscommunication <- NA}else{miscommunication <- y$pass$miscommunication}
+  if(is.null(y$pass$cross)){cross <- NA}else{cross <- y$pass$cross}
+  if(is.null(y$pass$cut_back)){cut.back <- NA}else{cut.back <- y$pass$cut_back}
+  if(is.null(y$pass$switch)){switch <- NA}else{switch <- y$pass$switch}
+  if(is.null(y$pass$shot_assist)){shot.assist <- NA}else{shot.assist <- y$pass$shot_assist}
+  if(is.null(y$pass$goal_assist)){goal.assist <- NA}else{goal.assist <- y$pass$goal_assist}
+  
+  # Deflected: Pass, Shot
+  if(is.null(y[[str_replace(tolower(y$type$name)," ","_")]]$deflected)){deflected <- NA}else{deflected <- y[[str_replace(tolower(y$type$name)," ","_")]]$deflected}
+  
+  # Player Off
+  if(is.null(y$player_off$permanent)){player.off.permanent <- NA}else{player.off.permanent <- y$player_off$permanent}
+  
+  # Shot
+  if(is.null(y$shot$goal_assist)){shot.key.pass.id <- NA_character_}else{shot.key.pass.id <- y$shot$key_pass_id}
+  if(is.null(y$shot$follows_dribble)){follows.dribble <- NA}else{follows.dribble <- y$shot$follows_dribble}
+  if(is.null(y$shot$first_time)){first.time <- NA}else{first.time <- y$shot$first_time}
+  if(is.null(y$shot$open_goal)){open.goal <- NA}else{open.goal <- y$shot$open_goal}
+  if(is.null(y$shot$statsbomb_xg)){xg <- NA_real_}else{xg <- y$shot$statsbomb_xg}
+  
+  # Substitution
+  if(is.null(y$substitution$replacement$name)){substitution <- NA_character_}else{substitution <- y$substitution$replacement$name}
+  
+  
+  # --------------------------------------------
+  
+  
+  
+  data.frame(
+    id = y$id,
+    related_events = related_events,
+    index = y$index,
+    period = y$period,
+    timestamp = y$timestamp,
+    minute = y$minute,
+    second = y$second,
+    possession.team = y$possession_team$name,
+    team = y$team$name,
+    team.formation = formation,
+    player = player,
+    player.position = player.position,
+    event = y$type$name,
+    play.pattern = y$play_pattern$name,
+    possession = y$possession,
+    event.type = event.type,
+    x.location = location[1],
+    y.location = location[2],
+    x.end.location = end_location[1],
+    y.end.location = end_location[2],
+    z.end.location = end_location[3],
+    duration = duration,
+    pass.recipient = pass.recipient, 
+    pass.length = pass.length, 
+    pass.angle = pass.angle, 
+    pass.height = pass.height,
+    assisted.shot.id = assisted.shot.id,
+    backheel = backheel,
+    deflected = deflected,
+    miscommunication = miscommunication,
+    cross = cross,
+    cut.back = cut.back,
+    switch = switch,
+    shot.assist = shot.assist,
+    goal.assist = goal.assist,
+    technique = technique,
+    body.part = body.part,
+    outcome = outcome,
+    shot.key.pass.id = shot.key.pass.id,
+    follows.dribble = follows.dribble,
+    first.time = first.time,
+    open.goal = open.goal,
+    xg = xg,
+    under.pressure = under.pressure, 
+    counterpress = counterpress,
+    card = card,
+    offensive = offensive,
+    recovery.failure = recovery.failure,
+    deflection = deflection,
+    save.block = save.block,
+    aerial.won = aerial.won,
+    overrun = overrun,
+    nutmeg = nutmeg,
+    no.touch = no.touch,
+    advantage = advantage,
+    penalty = penalty,
+    gk.position = gk.position,
+    gk.type = gk.type,
+    injury.stoppage.in.chain,
+    player.off.permanent = player.off.permanent,
+    substitution = substitution,
+    out = out,
+    off.camera = off.camera,
+    half.end.match.suspended = half.end.match.suspended,
+    stringsAsFactors = FALSE
+    )
+  
+  }) %>% bind_rows() %>%
+  # Takımların Taktiksel Değişiklikler
+  group_by(team) %>% 
+  fill(team.formation) %>% fill(team.formation, .direction = 'up')
+```
