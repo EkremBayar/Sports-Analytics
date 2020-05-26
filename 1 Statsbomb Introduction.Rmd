@@ -31,7 +31,7 @@ user = "erhan"
 
 
 if(user == "erhan")
-  {path = "D:\\Akademik Çalýþmalar\\Spor Bilimi\\Futbol\\Statsbomb\\data\\"}
+  {path = "D:\\Akademik ?al??malar\\Spor Bilimi\\Futbol\\Statsbomb\\data\\"}
 if(user == "ekrem")
   {path = "C:\\Users\\dell\\Desktop\\FoT\\open-data-master\\data\\"}
 
@@ -54,11 +54,13 @@ matches file gives us match details with json format.
 match.files <- list.files(path=paste0(path,"matches"),
                           full.names = TRUE,recursive = TRUE)
 match.files
+
+
 ```
 
 ```{r}
 all.matches <- lapply(match.files, function(x){
-  
+
   match.temp <- fromJSON(file=x)
   
   matches.df <- lapply(match.temp, function(y){
@@ -110,6 +112,8 @@ datatable(numofmatches)
 
 There are 107 matches in the FA Women's Super League 2018/2019 but it had to be 110 matches. There are no 3 matches details in first six observation.
 
+Also we see that LaLiga only contains matches of Barcelona.
+
 
 ```{r}
 numofmatches %>% 
@@ -154,12 +158,15 @@ Lineups gives player details, starting eleven and bench in each team.
 lineups <- list.files(path=paste0(path,"lineups"),
                           full.names = TRUE,recursive = TRUE)
 head(lineups)
+
+length(lineups)
 ```
 
 ```{r}
 lineups <- lapply(lineups, function(x){
   # Match Id
-  match_id <- data.frame(match_id = as.numeric(str_extract_all(x, "\\(?[0-9]+\\)?")[[1]]))
+  
+  match_id <- data.frame(match_id = as.numeric(str_extract(x, "\\(?[0-9]+\\)?")))
   # Read Json
   temp <- fromJSON(file=x)
   
@@ -269,44 +276,3 @@ events <- mclapply(event.files[wmi_index], function(x){
 
 }) %>% bind_rows()
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
